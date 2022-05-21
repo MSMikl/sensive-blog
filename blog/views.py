@@ -47,35 +47,25 @@ def index(request):
 
     most_popular_posts = (
         Post.objects.
-        filter(id__in=(
-            Post.objects.
-            annotate(likes_count=Count('likes')).
-            order_by('-likes_count')[:5]
-        ).values('id')).
-        annotate(comments_count=Count('comments'))
+        popular()[:5].
+        fetch_with_comments_count().
+        prefetch_related('author')
     )
 
     most_fresh_posts = (
-        Post.objects.
-        filter(id__in=(
-            Post.objects.
-            order_by('-published_at')[:5]
-        ).values('id')).
-        annotate(comments_count=Count('comments'))
+        Post.objects.order_by('-published_at')[:5].
+        fetch_with_comments_count().
+        prefetch_related('author')
     )
 
     most_popular_tags = Tag.objects.popular()[:5]
 
     context = {
         'most_popular_posts': [
-            serialize_post_optimized(post) for post in (
-                most_popular_posts.prefetch_related('author')
-            )
+            serialize_post_optimized(post) for post in most_popular_posts
         ],
         'page_posts': [
-            serialize_post_optimized(post) for post in (
-                most_fresh_posts.prefetch_related('author')
-            )
+            serialize_post_optimized(post) for post in most_fresh_posts
         ],
         'popular_tags': [serialize_tag(tag) for tag in most_popular_tags],
     }

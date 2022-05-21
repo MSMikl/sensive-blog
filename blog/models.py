@@ -11,6 +11,23 @@ class PostQuerySet(models.QuerySet):
             order_by('published_at')
         )
 
+    def popular(self):
+        return (
+            Post.objects.
+            annotate(likes_count=models.Count('likes')).
+            order_by('-likes_count')
+        )
+
+    def fetch_with_comments_count(self):
+        """Функция для последовательного подсчета количества комментариев
+        Применяет annotate только к уже отобранному ранее QuerySet,
+        сокращая сложность SQL-запроса."""
+        return (
+            Post.objects.
+            filter(id__in=self.values('id')).
+            annotate(comments_count=models.Count('comments'))
+        )
+
 
 class TagQuerySet(models.QuerySet):
 
